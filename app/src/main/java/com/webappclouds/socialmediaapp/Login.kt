@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_login.*
 import java.io.ByteArrayOutputStream
@@ -36,6 +37,9 @@ class Login : AppCompatActivity() {
         ivImagePerson.setOnClickListener(View.OnClickListener {
             checkPermission()
         })
+
+        FirebaseMessaging.getInstance().subscribeToTopic("news")
+
     }
 
     fun loginToFireBase(email: String, password: String) {
