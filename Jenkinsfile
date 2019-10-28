@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'android2'
+        label 'android'
     }
     options {
         timeout(time: 10, unit: 'MINUTES') 
