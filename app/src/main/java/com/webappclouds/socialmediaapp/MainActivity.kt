@@ -2,32 +2,50 @@ package com.webappclouds.socialmediaapp
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.Toast
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.add_ticket.view.*
+import java.io.ByteArrayOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class MainActivity : AppCompatActivity() {
 
     var listTweets = ArrayList<Ticket>()
-    var adapter:MyTweetAdapter?=null
+    var adapter: MyTweetAdapter? = null
+    var myEmail: String? = null
+    var userUID: String? = null
+
+    private var database = FirebaseDatabase.getInstance()
+    private var myRef = database.reference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        var bundle: Bundle = intent.extras!!
+        myEmail = bundle.getString("email")
+        userUID = bundle.getString("uid")
+
         //Dummy Data
 
         listTweets.add(Ticket("0", "him", "url", "add"))
-        listTweets.add(Ticket("1", "him", "url", "bill"))
+        listTweets.add(Ticket("0", "him", "url", "bill"))
 
-        var adapter = MyTweetAdapter(this,listTweets)
-        lvTweets.adapter=adapter
+        var adapter = MyTweetAdapter(this, listTweets)
+        lvTweets.adapter = adapter
     }
 
     inner class MyTweetAdapter : BaseAdapter {
@@ -43,7 +61,20 @@ class MainActivity : AppCompatActivity() {
             var mytweet = listNotesAdpater[p0]
             if (mytweet.tweetPersonUID.equals("add")) {
                 var myView = layoutInflater.inflate(R.layout.add_ticket, null)
+                myView.iv_attach.setOnClickListener(View.OnClickListener {
+                    loadImage()
+                })
 
+                myView.iv_post.setOnClickListener(View.OnClickListener {
+                    //upload server
+                    myRef.child("posts").push().setValue(
+                        PostInfo(
+                            userUID!!,
+                            myView.etPost.text.toString(), downloadURL!!
+                        )
+                    )
+                    myView.etPost.setText("")
+                })
                 return myView
 
             } else {
@@ -74,5 +105,53 @@ class MainActivity : AppCompatActivity() {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         )
         startActivityForResult(intent, PICK_IMAGE_CODE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == PICK_IMAGE_CODE && data != null && resultCode == RESULT_OK) {
+
+            val selectedImage = data.data
+            val filePathColum = arrayOf(MediaStore.Images.Media.DATA)
+            val cursor = contentResolver.query(selectedImage!!, filePathColum, null, null, null)
+            cursor!!.moveToFirst()
+            val coulomIndex = cursor!!.getColumnIndex(filePathColum[0])
+            val picturePath = cursor!!.getString(coulomIndex)
+            cursor!!.close()
+            UploadImage(BitmapFactory.decodeFile(picturePath))
+        }
+
+    }
+
+    var downloadURL: String? = ""
+    fun UploadImage(bitmap: Bitmap) {
+        listTweets.add(0, Ticket("0", "him", "url", "loading"))
+        adapter!!.notifyDataSetChanged()
+
+        val storage = FirebaseStorage.getInstance()
+        val storgaRef = storage.getReferenceFromUrl("gs://gameudemy.appspot.com")
+        val df = SimpleDateFormat("ddMMyyHHmmss")
+        val dataobj = Date()
+        val imagePath = SplitString(myEmail!!) + "." + df.format(dataobj) + ".jpg"
+        val ImageRef = storgaRef.child("imagePost/" + imagePath)
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val data = baos.toByteArray()
+        val uploadTask = ImageRef.putBytes(data)
+        uploadTask.addOnFailureListener {
+            Toast.makeText(applicationContext, "fail to upload", Toast.LENGTH_LONG).show()
+        }.addOnSuccessListener { taskSnapshot ->
+
+            downloadURL = taskSnapshot.storage.downloadUrl.toString()!!
+            listTweets.removeAt(0)
+            adapter!!.notifyDataSetChanged()
+
+        }
+    }
+
+    fun SplitString(email: String): String {
+        val split = email.split("@")
+        return split[0]
     }
 }
