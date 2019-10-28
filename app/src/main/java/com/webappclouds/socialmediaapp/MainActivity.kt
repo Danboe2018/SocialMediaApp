@@ -11,6 +11,8 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -83,8 +85,15 @@ class MainActivity : AppCompatActivity() {
                 })
                 return myView
 
-            } else if(myTweet.tweetPersonUID.equals("loading")) {
+            } else if (myTweet.tweetPersonUID.equals("loading")) {
                 var myView = layoutInflater.inflate(R.layout.loading_ticket, null)
+                return myView
+            } else if (myTweet.tweetPersonUID.equals("ads")) {
+                var myView = layoutInflater.inflate(R.layout.ads_ticket, null)
+
+                var mAdView = myView.findViewById(R.id.adView) as AdView
+                val adRequest = AdRequest.Builder().build()
+                mAdView.loadAd(adRequest)
                 return myView
             } else {
                 var myView = layoutInflater.inflate(R.layout.tweets_ticket, null)
