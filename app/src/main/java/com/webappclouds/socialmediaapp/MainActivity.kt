@@ -83,6 +83,9 @@ class MainActivity : AppCompatActivity() {
                 })
                 return myView
 
+            } else if(myTweet.tweetPersonUID.equals("loading")) {
+                var myView = layoutInflater.inflate(R.layout.loading_ticket, null)
+                return myView
             } else {
                 var myView = layoutInflater.inflate(R.layout.tweets_ticket, null)
                 myView.txt_tweet.text = myTweet.tweetText
@@ -156,7 +159,7 @@ class MainActivity : AppCompatActivity() {
     var downloadURL: String? = ""
     fun UploadImage(bitmap: Bitmap) {
         listTweets.add(0, Ticket("0", "him", "url", "loading"))
-//        adapter!!.notifyDataSetChanged()
+        adapter!!.notifyDataSetChanged()
 
         val storage = FirebaseStorage.getInstance()
         val storgaRef = storage.getReferenceFromUrl("gs://socialmediaapp-264ae.appspot.com")
